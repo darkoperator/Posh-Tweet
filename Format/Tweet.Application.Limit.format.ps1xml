@@ -1,0 +1,83 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<Configuration>
+<ViewDefinitions>
+<View>
+    <Name>Tweet.Application.Limit'</Name>
+    <ViewSelectedBy>
+        <TypeName>Tweet.Application.Limit'</TypeName>
+    </ViewSelectedBy>
+    <ListControl>
+        <ListEntries>
+            <ListEntry>
+                <ListItems>
+                    <ListItem> 
+                        <Label>Lists</Label>
+                        <PropertyName>lists</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Application</Label>
+                        <PropertyName>application</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Friendships</Label>
+                        <PropertyName>friendships</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Blocks</Label>
+                        <PropertyName>blocks</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Friends</Label>
+                        <PropertyName>friends</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>GEO</Label>
+                        <PropertyName>geo</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Users</Label>
+                        <PropertyName>users</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Followers</Label>
+                        <PropertyName>followers</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Statuses</Label>
+                        <PropertyName>statuses</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Help</Label>
+                        <PropertyName>help</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Direct_Messages</Label>
+                        <PropertyName>direct_messages</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Account</Label>
+                        <PropertyName>account</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Favorites</Label>
+                        <PropertyName>favorites</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Saved_Searches</Label>
+                        <PropertyName>saved_searches</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Search</Label>
+                        <PropertyName>search</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Trends</Label>
+                        <PropertyName>trends</PropertyName>
+                    </ListItem>
+                    </ListItems>
+            </ListEntry>
+        </ListEntries>
+    </ListControl>
+</View>
+</ViewDefinitions>
+</Configuration>

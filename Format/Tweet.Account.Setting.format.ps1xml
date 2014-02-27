@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<Configuration>
+<ViewDefinitions>
+<View>
+    <Name>Tweet.Account.Setting</Name>
+    <ViewSelectedBy>
+        <TypeName>Tweet.Account.Setting</TypeName>
+    </ViewSelectedBy>
+    <ListControl>
+        <ListEntries>
+            <ListEntry>
+                <ListItems>
+                    <ListItem> 
+                        <Label>ScreenName</Label>
+                        <PropertyName>ScreenName</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Protected</Label>
+                        <PropertyName>Protected</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>DiscoverableByEmail</Label>
+                        <PropertyName>DiscoverableByEmail</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>GeoEnabled</Label>
+                        <PropertyName>GeoEnabled</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Language</Label>
+                        <PropertyName>Language</PropertyName>
+                    </ListItem>
+                    </ListItems>
+            </ListEntry>
+        </ListEntries>
+    </ListControl>
+</View>
+</ViewDefinitions>
+</Configuration>
