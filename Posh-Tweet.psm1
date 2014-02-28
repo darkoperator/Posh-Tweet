@@ -236,9 +236,8 @@ function Send-Tweet
     Process
     {
         $TweetResult = $TwClient.UpdateStatus($Message)
-        $JSONPSCustom = $TweetResult.JsonText | ConvertFrom-Json
-        $JSONPSCustom.pstypenames.insert(0,'Tweet.Message')
-        $JSONPSCustom
+        $TweetResult.pstypenames.insert(0,'Tweet.SentMessage')
+        $TweetResult
     }
     End
     {
@@ -262,18 +261,29 @@ function Get-TweetTimeline
     [OutputType([psobject])]
     Param
     (
-        # Specifies the number of records to retrieve. Must be less than or equal to 200. Defaults to 20.
+        # Specifies the number of records to retrieve. Must be less than or 
+        # equal to 200. Defaults to 20.
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
         [int]
         $Count,
 
-        # This parameter will prevent replies from appearing in the returned timeline. 
+        # This parameter will prevent replies from appearing in the returned 
+        # timeline. 
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [switch]
-        $ExcludeReplies
+        $ExcludeReplies,
+
+        # Returns results with an ID greater than (that is, more recent than)
+        # the specified ID. There are limits to the number of Tweets which can
+        # be accessed. If the limit of Tweets has occured since the since_id,
+        # the since_id will be forced to the oldest ID available.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $SinceID
     )
 
     Begin
@@ -287,6 +297,7 @@ function Get-TweetTimeline
             $TwClient = $Global:TweetInstance
         }
 
+        # Set options for the query of messages
         $TimelineOptions = new-object HigLabo.Net.Twitter.GetHomeTimelineCommand
     }
     Process
@@ -301,16 +312,20 @@ function Get-TweetTimeline
             $TimelineOptions.ExcludeReplies = 'true'
         }
 
+        if ($SinceID)
+        {
+            $TimelineOptions.SinceID = $SinceID
+        }
+
 
         $TimelineResult = $TwClient.GetHomeTimeline($TimelineOptions)
         foreach($Message in $TimelineResult)
         {
+            $Message.pstypenames.insert(0,'Tweet.Message')
+            $Message | Add-Member -NotePropertyName Name -NotePropertyValue $Message.User.Name
+            $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
             $Message
         }
-
-        #$JSONPSCustom = $TweetResult.JsonText | ConvertFrom-Json
-        #$JSONPSCustom.pstypenames.insert(0,'Tweet.Message')
-        #$JSONPSCustom
     }
     End
     {

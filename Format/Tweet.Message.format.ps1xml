@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<Configuration>
+<ViewDefinitions>
+<View>
+    <Name>Tweet.Message</Name>
+    <ViewSelectedBy>
+        <TypeName>Tweet.Message</TypeName>
+    </ViewSelectedBy>
+    <ListControl>
+        <ListEntries>
+            <ListEntry>
+                <ListItems>
+                    <ListItem> 
+                        <Label>ID</Label>
+                        <PropertyName>ID</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Name</Label>
+                        <PropertyName>Name</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>ScreenName</Label>
+                        <PropertyName>ScreenName</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Text</Label>
+                        <PropertyName>Text</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>CreatedAt</Label>
+                        <PropertyName>CreatedAt</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Source</Label>
+                        <PropertyName>Source</PropertyName>
+                    </ListItem>
+                    </ListItems>
+            </ListEntry>
+        </ListEntries>
+    </ListControl>
+</View>
+</ViewDefinitions>
+</Configuration>

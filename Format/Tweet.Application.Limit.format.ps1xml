@@ -2,9 +2,9 @@
 <Configuration>
 <ViewDefinitions>
 <View>
-    <Name>Tweet.Application.Limit'</Name>
+    <Name>Tweet.Application.Limit</Name>
     <ViewSelectedBy>
-        <TypeName>Tweet.Application.Limit'</TypeName>
+        <TypeName>Tweet.Application.Limit</TypeName>
     </ViewSelectedBy>
     <ListControl>
         <ListEntries>
