@@ -18,22 +18,26 @@ function Set-TweetToken
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
-        [string]$APIKey,
+        [string]
+        $APIKey,
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=1)]
-        [string]$APISecret,
+        [string]
+        $APISecret,
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=2)]
-        [string]$AccessToken,
+        [string]
+        $AccessToken,
 
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=3)]
-        [string]$AccessTokenSecret
+        [string]
+        $AccessTokenSecret
     )
 
     Begin
@@ -126,8 +130,7 @@ function Get-TweetAccountSetting
 {
     [CmdletBinding()]
     [OutputType([psobject])]
-    Param
-    ()
+    Param()
 
     Begin
     {
@@ -186,6 +189,128 @@ function Get-TweetApplicationRateLimit
         $JSONPSCustom = $AppLimitResult.JsonText | ConvertFrom-Json
         $JSONPSCustom.pstypenames.insert(0,'Tweet.Application.Limit')
         $JSONPSCustom
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Returns a collection of the most recent Tweets and retweets posted by the 
+   authenticating user and the users they follow.
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Send-Tweet
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Twitter message to send. Limit of 140 charecters.
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [ValidateLength(1,140)]
+        [string]
+        $Message
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+    }
+    Process
+    {
+        $TweetResult = $TwClient.UpdateStatus($Message)
+        $JSONPSCustom = $TweetResult.JsonText | ConvertFrom-Json
+        $JSONPSCustom.pstypenames.insert(0,'Tweet.Message')
+        $JSONPSCustom
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetTimeline
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Specifies the number of records to retrieve. Must be less than or equal to 200. Defaults to 20.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [int]
+        $Count,
+
+        # This parameter will prevent replies from appearing in the returned timeline. 
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]
+        $ExcludeReplies
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        $TimelineOptions = new-object HigLabo.Net.Twitter.GetHomeTimelineCommand
+    }
+    Process
+    {
+        if ($Count)
+        {
+            $TimelineOptions.Count = $Count
+        }
+
+        if ($ExcludeReplies)
+        {
+            $TimelineOptions.ExcludeReplies = 'true'
+        }
+
+
+        $TimelineResult = $TwClient.GetHomeTimeline($TimelineOptions)
+        foreach($Message in $TimelineResult)
+        {
+            $Message
+        }
+
+        #$JSONPSCustom = $TweetResult.JsonText | ConvertFrom-Json
+        #$JSONPSCustom.pstypenames.insert(0,'Tweet.Message')
+        #$JSONPSCustom
     }
     End
     {
