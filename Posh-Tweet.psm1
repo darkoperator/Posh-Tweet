@@ -37,7 +37,13 @@ function Set-TweetToken
                    ValueFromPipelineByPropertyName=$true,
                    Position=3)]
         [string]
-        $AccessTokenSecret
+        $AccessTokenSecret,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=4)]
+        [securestring]$MasterPassword
+
     )
 
     Begin
@@ -53,6 +59,10 @@ function Set-TweetToken
         }
         
         $ConfigAsJson = ConvertTo-Json -InputObject $TokenHash -Compress
+
+        $SecureKeyString = ConvertTo-SecureString -String "$($ConfigAsJson)"  -AsPlainText -Force
+        $EncryptedString = $SecureKeyString | ConvertFrom-SecureString -SecureKey $MasterPassword
+
         $FolderName = "Posh-Tweet"
         $ConfigName = "config.json"
         
@@ -64,7 +74,7 @@ function Set-TweetToken
         }
         
         Write-Verbose -Message "Saving the information to configuration file $("$($env:AppData)\$FolderName\$ConfigName")"
-        "$($ConfigAsJson)"  | Set-Content  "$($env:AppData)\$FolderName\$ConfigName" -Force
+        "$($EncryptedString)"  | Set-Content  "$($env:AppData)\$FolderName\$ConfigName" -Force
         
     }
     End
@@ -88,7 +98,12 @@ function Connect-TweetService
 {
     [CmdletBinding()]
     [OutputType([HigLabo.Net.Twitter.TwitterClient])]
-    Param()
+    Param(
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [securestring]$MasterPassword
+    )
 
     Begin
     {
@@ -101,7 +116,15 @@ function Connect-TweetService
     Process
     {
         $Config = Get-Content -Path "$($env:AppData)\Posh-Tweet\config.json"
-        $ConfigObj = $Config | ConvertFrom-Json
+        
+        $SecString = ConvertTo-SecureString -SecureKey $MasterPassword -String $Config
+
+        # Decrypt the secure string.
+        $SecureStringToBSTR = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecString)
+        $APIKeystring = [Runtime.InteropServices.Marshal]::PtrToStringAuto($SecureStringToBSTR)
+
+        $ConfigObj = $APIKeystring | ConvertFrom-Json
+
         $TwitterClient = New-Object HigLabo.Net.Twitter.TwitterClient($ConfigObj.APIKey,
                                                                       $ConfigObj.APISecret,
                                                                       $ConfigObj.AccessToken,
