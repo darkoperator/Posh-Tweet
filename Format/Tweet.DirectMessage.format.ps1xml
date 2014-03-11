@@ -1,0 +1,39 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<Configuration>
+<ViewDefinitions>
+<View>
+    <Name>Tweet.DirectMessage</Name>
+    <ViewSelectedBy>
+        <TypeName>Tweet.DirectMessage</TypeName>
+    </ViewSelectedBy>
+    <ListControl>
+        <ListEntries>
+            <ListEntry>
+                <ListItems>
+                    <ListItem> 
+                        <Label>ID</Label>
+                        <PropertyName>ID</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>SenderScreenName</Label>
+                        <PropertyName>SenderScreenName</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>RecipientScreenName</Label>
+                        <PropertyName>RecipientScreenName</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Text</Label>
+                        <PropertyName>Text</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>CreatedAt</Label>
+                        <PropertyName>CreatedAt</PropertyName>
+                    </ListItem>
+                    </ListItems>
+            </ListEntry>
+        </ListEntries>
+    </ListControl>
+</View>
+</ViewDefinitions>
+</Configuration>

@@ -313,6 +313,50 @@ function Send-Tweet
         $TweetResult.pstypenames.insert(0,'Tweet.SentMessage')
         $TweetResult
     }
+    End{}
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Remove-Tweet
+{
+    [CmdletBinding()]
+
+    Param
+    (
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [long]
+        $Id
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+    }
+    Process
+    {
+        $StatusMsg = $TweetInstance.DestroyStatus($Id)
+        $StatusMsg.pstypenames.insert(0,'Tweet.SentMessage')
+        $StatusMsg
+    }
     End
     {
     }
@@ -404,9 +448,7 @@ function Get-TweetTimeline
             $Message
         }
     }
-    End
-    {
-    }
+    End{}
 }
 
 
@@ -496,9 +538,7 @@ function Get-TweetMentionTimeline
             $Message
         }
     }
-    End
-    {
-    }
+    End{}
 }
 
 <#
@@ -585,9 +625,7 @@ function Get-TweetRetweetTimeline
             $Message
         }
     }
-    End
-    {
-    }
+    End{}
 }
 
 <#
@@ -711,6 +749,582 @@ function Get-TweetUserTimeline
             $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
             $Message
         }
+    }
+    End{}
+}
+
+
+<#
+.SYNOPSIS
+    Returns the most recent direct messages sent to the authenticating user
+
+.DESCRIPTION
+    Returns the 20 most recent direct messages by default sent to the
+    authenticating user. Includes detailed information about the sender
+    and recipient user. 
+
+.PARAMETER Count
+    Specifies the number of records to retrieve. Must be less than or 
+    equal to 200. Defaults to 20.
+
+.PARAMETER SinceID
+    Returns results with an ID greater than (that is, more recent than)
+    the specified ID. There are limits to the number of Tweets which can
+    be accessed. If the limit of Tweets has occured since the since_id,
+    the since_id will be forced to the oldest ID available.
+
+.PARAMETER MaxID
+    Returns results with an ID less than (that is, older than) or equal 
+    to the specified ID.
+
+
+.NOTES
+    Important: This method requires an access token with RWD (read, write & 
+    direct message) permissions.
+
+#>
+function Get-TweetDMTimeline
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Specifies the number of records to retrieve. Must be less than or 
+        # equal to 200. Defaults to 20.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [int]
+        $Count,
+
+        # Returns results with an ID greater than (that is, more recent than)
+        # the specified ID. There are limits to the number of Tweets which can
+        # be accessed. If the limit of Tweets has occured since the since_id,
+        # the since_id will be forced to the oldest ID available.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $SinceID,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $MaxID
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        # Set options for the query of messages
+        $TimelineOptions = New-Object HigLabo.Net.Twitter.GetDirectMessageListCommand
+    }
+    Process
+    {
+        if ($Count)
+        {
+            $TimelineOptions.Count = $Count
+        }
+
+        if ($MaxID)
+        {
+            $TimelineOptions.MaxID = $MaxID
+        }
+
+        if ($Page)
+        {
+            $TimelineOptions.Page = $Page
+        }
+
+        if ($SinceID)
+        {
+            $TimelineOptions.SinceID = $SinceID
+        }
+
+
+        $TimelineResult = $TwClient.GetDirectMessageList($TimelineOptions)
+        foreach($Message in $TimelineResult)
+        {
+            $Message.pstypenames.insert(0,'Tweet.DirectMessage')
+            $Message
+        }
+    }
+    End{}
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetDMSentTimeline
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Specifies the number of records to retrieve. Must be less than or 
+        # equal to 200. Defaults to 20.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [int]
+        $Count,
+
+        # Returns results with an ID greater than (that is, more recent than)
+        # the specified ID. There are limits to the number of Tweets which can
+        # be accessed. If the limit of Tweets has occured since the since_id,
+        # the since_id will be forced to the oldest ID available.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $SinceID,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $MaxID
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        # Set options for the query of messages
+        $TimelineOptions = New-Object HigLabo.Net.Twitter.GetDirectMessageListCommand
+    }
+    Process
+    {
+        if ($Count)
+        {
+            $TimelineOptions.Count = $Count
+        }
+
+        if ($MaxID)
+        {
+            $TimelineOptions.MaxID = $MaxID
+        }
+
+        if ($Page)
+        {
+            $TimelineOptions.Page = $Page
+        }
+
+        if ($SinceID)
+        {
+            $TimelineOptions.SinceID = $SinceID
+        }
+
+
+        $TimelineResult = $TwClient.GetDirectMessageListSent($TimelineOptions)
+        foreach($Message in $TimelineResult)
+        {
+            $Message.pstypenames.insert(0,'Tweet.DirectMessage')
+            $Message
+        }
+    }
+    End{}
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Remove-TweetDMMessage
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Specifies the number of records to retrieve. Must be less than or 
+        # equal to 200. Defaults to 20.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [long]
+        $Id
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+    }
+    Process
+    {
+        $DeletedDM = $TwClient.DestroyDirectMessage($Id)
+        $DeletedDM.pstypenames.insert(0,'Tweet.DirectMessage')
+        $DeletedDM
+    }
+    End{}
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Send-TweetDM
+{
+    [CmdletBinding()]
+    [OutputType([psobject])]
+    Param
+    (
+        # Twitter message to send. Limit of 140 charecters.
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1)]
+        [ValidateLength(1,140)]
+        [string]
+        $Message,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $ScreenName
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        $DMOps = New-Object HigLabo.Net.Twitter.NewDirectMessageCommand
+    }
+    Process
+    {
+        $DMOps.Text = $Message
+        $DMOps.ScreenName = $ScreenName
+        $TweetResult = $TwClient.NewDirectMessage($DMOps)
+        $TweetResult.pstypenames.insert(0,'Tweet.DirectMessage')
+        $TweetResult
+    }
+    End{}
+}
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetBlockList
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]$IncludeEntities,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]$SkipStatus
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        $BlockCmd = New-Object HigLabo.Net.Twitter.GetBlocksListCommand
+
+        if ($IncludeEntities)
+        {
+            $BlockCmd.IncludeEntities = $IncludeEntities
+        }
+
+        if ($SkipStatus)
+        {
+            $BlockCmd.SkipStatus = $SkipStatus
+        }
+    }
+    Process
+    {
+        $BlockedUsers = $TwClient.GetBlocksList($BlockCmd).users
+        foreach($bUser in $BlockedUsers)
+        {
+            $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
+            $bUser
+        }
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Block-TweetUser
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true,
+            Position=0)]
+        $ScreenName
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        $BlockOps = New-Object HigLabo.Net.Twitter.CreateBlocksCommand
+    }
+    Process
+    {
+        $BlockOps.ScreenName = $ScreenName
+        $bUser = $TwClient.CreateBlocks($BlockOps)
+
+        $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
+        $bUser
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Unblock-TweetUser
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true,
+            Position=0)]
+        $ScreenName
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+
+        $BlockOps = New-Object HigLabo.Net.Twitter.DestroyBlocksCommand
+    }
+    Process
+    {
+        $BlockOps.ScreenName = $ScreenName
+        $bUser = $TwClient.DestroyBlocks($BlockOps)
+
+        $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
+        $bUser
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Remove-TweetFollow
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true,
+            Position=0)]
+        $ScreenName
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+    }
+    Process
+    {
+        $TwUser = $TwClient.DestroyFriendship($ScreenName)
+        $TwUser.pstypenames.insert(0, 'Tweet.User')
+        $TwUser
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Add-TweetFollow
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$true,
+            ValueFromPipelineByPropertyName=$true,
+            Position=0)]
+        $ScreenName
+    )
+
+    Begin
+    {
+        if (!(Test-Path variable:Global:TweetInstance ))
+        {
+            throw "No connection present."
+        }
+        else
+        {
+            $TwClient = $Global:TweetInstance
+        }
+    }
+    Process
+    {
+        $TwUser = $TwClient.CreateFriendship($ScreenName)
+        $TwUser.pstypenames.insert(0, 'Tweet.User')
+        $TwUser
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetFollowing
+{
+    [CmdletBinding()]
+    [OutputType([int])]
+    Param
+    (
+        # Param1 help description
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $Param1,
+
+        # Param2 help description
+        [int]
+        $Param2
+    )
+
+    Begin
+    {
+    }
+    Process
+    {
     }
     End
     {

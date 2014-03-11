@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-16"?>
+<Configuration>
+<ViewDefinitions>
+<View>
+    <Name>Tweet.User</Name>
+    <ViewSelectedBy>
+        <TypeName>Tweet.User</TypeName>
+    </ViewSelectedBy>
+    <ListControl>
+        <ListEntries>
+            <ListEntry>
+                <ListItems>
+                    <ListItem> 
+                        <Label>ScreenName</Label>
+                        <PropertyName>ScreenName</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Protected</Label>
+                        <PropertyName>Protected</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>GeoEnabled</Label>
+                        <PropertyName>GeoEnabled</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Language</Label>
+                        <PropertyName>Language</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Tweets</Label>
+                        <PropertyName>StatusesCount</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Following</Label>
+                        <PropertyName>FriendsCount</PropertyName>
+                    </ListItem>
+                    <ListItem>
+                        <Label>Followers</Label>
+                        <PropertyName>FollowersCount</PropertyName>
+                    </ListItem>
+                    </ListItems>
+            </ListEntry>
+        </ListEntries>
+    </ListControl>
+</View>
+</ViewDefinitions>
+</Configuration>
