@@ -63,12 +63,12 @@ function Set-TweetToken
         $SecureKeyString = ConvertTo-SecureString -String "$($ConfigAsJson)"  -AsPlainText -Force
         $EncryptedString = $SecureKeyString | ConvertFrom-SecureString -SecureKey $MasterPassword
 
-        $FolderName = "Posh-Tweet"
-        $ConfigName = "config.json"
+        $FolderName = 'Posh-Tweet'
+        $ConfigName = 'config.json'
         
         if (!(Test-Path "$($env:AppData)\$FolderName"))
         {
-            Write-Verbose -Message "Seems this is the first time the config has been set."
+            Write-Verbose -Message 'Seems this is the first time the config has been set.'
             Write-Verbose -Message "Creating folder $("$($env:AppData)\$FolderName")"
             New-Item -ItemType directory -Path "$($env:AppData)\$FolderName" | Out-Null
         }
@@ -110,7 +110,7 @@ function Connect-TweetService
         # Test if configuration file exists.
         if (!(Test-Path "$($env:AppData)\Posh-Tweet\config.json"))
         {
-            throw "Configuration has not been set, Set-TweetTokens to configure the API Tokens."
+            throw 'Configuration has not been set, Set-TweetTokens to configure the API Tokens.'
         }
     }
     Process
@@ -163,7 +163,7 @@ function Get-TweetAccountSetting
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -207,7 +207,7 @@ function Get-TweetApplicationRateLimit
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -286,7 +286,7 @@ function Send-Tweet
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -344,7 +344,7 @@ function Remove-Tweet
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -411,7 +411,7 @@ function Get-TweetTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -501,7 +501,7 @@ function Get-TweetMentionTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -588,7 +588,7 @@ function Get-TweetRetweetTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -711,7 +711,7 @@ function Get-TweetUserTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -729,7 +729,7 @@ function Get-TweetUserTimeline
 
         if ($SinceID){ $TimelineOptions.SinceID = $SinceID }
 
-        if ($IncludeRT){ $TimelineOptions.IncludeRts = "true" }
+        if ($IncludeRT){ $TimelineOptions.IncludeRts = 'true' }
 
         if ($PSCmdlet.ParameterSetName -eq 'ScreenName')
         {
@@ -816,7 +816,7 @@ function Get-TweetDMTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -903,7 +903,7 @@ function Get-TweetDMSentTimeline
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -957,7 +957,7 @@ function Get-TweetDMSentTimeline
 .EXAMPLE
    Another example of how to use this cmdlet
 #>
-function Remove-TweetDMMessage
+function Remove-TweetDM
 {
     [CmdletBinding()]
     [OutputType([psobject])]
@@ -976,7 +976,7 @@ function Remove-TweetDMMessage
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1027,7 +1027,7 @@ function Send-TweetDM
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1075,7 +1075,7 @@ function Get-TweetBlockList
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1134,7 +1134,7 @@ function Block-TweetUser
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1182,7 +1182,7 @@ function Unblock-TweetUser
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1230,7 +1230,7 @@ function Remove-TweetFollow
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
@@ -1274,7 +1274,7 @@ function Add-TweetFollow
     {
         if (!(Test-Path variable:Global:TweetInstance ))
         {
-            throw "No connection present."
+            throw 'No connection present.'
         }
         else
         {
