@@ -1,5 +1,4 @@
-﻿
-<#
+﻿<#
 .Synopsis
    Saves the API Tokens for the Twitter Application Profile the module will use.
 .DESCRIPTION
@@ -82,6 +81,7 @@ function Set-TweetToken
     }
 }
 
+
 <#
 .Synopsis
    Connect to the Twitter service using previously saved Applicantion OAuth 
@@ -97,7 +97,7 @@ function Set-TweetToken
 function Connect-TweetService
 {
     [CmdletBinding()]
-    [OutputType([HigLabo.Net.Twitter.TwitterClient])]
+    [OutputType()]
     Param(
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
@@ -125,57 +125,21 @@ function Connect-TweetService
 
         $ConfigObj = $APIKeystring | ConvertFrom-Json
 
-        $TwitterClient = New-Object HigLabo.Net.Twitter.TwitterClient($ConfigObj.APIKey,
-                                                                      $ConfigObj.APISecret,
-                                                                      $ConfigObj.AccessToken,
-                                                                      $ConfigObj.AccessTokenSecret)
-
-        # Save client instance in to a variable other functions can use.
-        $Global:TweetInstance = $TwitterClient
-        
-        $TwitterClient
-    }
-    End
-    {
-    }
-}
-
-
-<#
-.Synopsis
-   Returns settings (including current trend, geo and sleep time information) 
-   for the authenticating user.
-.DESCRIPTION
-   Returns settings (including current trend, geo and sleep time information) 
-   for the authenticating user.
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Get-TweetAccountSetting
-{
-    [CmdletBinding()]
-    [OutputType([psobject])]
-    Param()
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        try
         {
-            throw 'No connection present.'
+            [Tweetinvi.TwitterCredentials]::Credentials = [Tweetinvi.TwitterCredentials]::CreateCredentials(
+                                                            $ConfigObj.AccessToken,
+                                                            $ConfigObj.AccessTokenSecret,
+                                                            $ConfigObj.APIKey,
+                                                            $ConfigObj.APISecret)
+            [Tweetinvi.User]::GetLoggedUser()
         }
-        else
+        catch
         {
-            $TwClient = $Global:TweetInstance
+            Write-Error -Message 'Could not connect to twitter with saved credentials'
+            $_
         }
-    }
-    Process
-    {
-        $AccountSettingResponse = $TwClient.GetAccountSettings()
-        $JSONPSCustom = $AccountSettingResponse.JsonText | ConvertFrom-Json
-        $JSONPSCustom.pstypenames.insert(0,'Tweet.Account.Setting')
-        $JSONPSCustom
+                                                            
     }
     End
     {
@@ -197,7 +161,7 @@ function Get-TweetAccountSetting
 .EXAMPLE
    Another example of how to use this cmdlet
 #>
-function Get-TweetApplicationRateLimit
+function Get-TweetRateLimit
 {
     [CmdletBinding()]
     [OutputType([psobject])]
@@ -205,21 +169,15 @@ function Get-TweetApplicationRateLimit
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
+         $logged = [Tweetinvi.User]::GetLoggedUser()
+         if ($logged -eq $null)
+         {
+            Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.' -ErrorAction Stop
+         }
     }
     Process
     {
-        $AppLimitResult = $TwClient.GetApplicationRateLimitStatus()
-        $JSONPSCustom = $AppLimitResult.JsonText | ConvertFrom-Json
-        $JSONPSCustom.pstypenames.insert(0,'Tweet.Application.Limit')
-        $JSONPSCustom
+        [Tweetinvi.RateLimit]::GetCurrentCredentialsRateLimits()
     }
     End
     {
@@ -229,19 +187,13 @@ function Get-TweetApplicationRateLimit
 
 <#
 .Synopsis
-   Updates the authenticating user's current status, also known as tweeting. 
+   Short description
 .DESCRIPTION
-   Updates the authenticating user's current status, also known as tweeting. 
+   Long description
 .EXAMPLE
-   Sending a Tweet
-
-   PS C:\> Send-Tweet -Message "@digininja cant complain"
-
-
-    ID        : 439382933800255488
-    Text      : @digininja cant complain
-    CreatedAt : 2/28/2014 12:53:49 PM +00:00
-    Source    : <a href="http://github.com/darkoperator" rel="nofollow">Posh-Tweet</a>
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
 #>
 function Send-Tweet
 {
@@ -264,57 +216,83 @@ function Send-Tweet
         [long]
         $ReplyToID,
 
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1,
+                   ParameterSetName = 'WithMedia')]
+        [ValidateScript({Test-Path $_})]
+        [string]
+        $Image,
+
         # The latitude of the location this tweet refers to. This parameter 
         # will be ignored unless it is inside the range -90.0 to +90.0 (North 
         # is positive) inclusive.
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName = 'Geo')]
-        [string]
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [double]
         $Latitude,
 
         # The longitude of the location this tweet refers to. The valid ranges
         # for longitude is -180.0 to +180.0 (East is positive) inclusive. 
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   ParameterSetName = 'Geo')]
-        [string]
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [double]
         $Longitude
+
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        $TweetOps = New-Object HigLabo.Net.Twitter.UpdateStatusCommand 
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+         if ($logged -eq $null)
+         {
+            Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+            return
+         }
     }
     Process
     {
-        $TweetOps.Status = $Message
-        if ($ReplyToID)
-        {
-            $TweetOps.InReplyToStatusID = $ReplyToID
-        }
+        switch ($PSCmdlet.ParameterSetName)
+           {
+               'std' 
+               {
+                    $tweet = [Tweetinvi.Tweet]::CreateTweet($Message)
+                    if ($ReplyToID)
+                    {
+                        $tweet.InReplyToStatusId($ReplyToID)
+                    }
+               }
 
-        if ($PSCmdlet.ParameterSetName -eq 'Geo')
-        {
-            $TweetOps.Longitude = $Longitude
-            $TweetOps.Latitude = $Latitude
-        }
+               'WithMedia'
+               {
+                    [byte[]]$file1 = Get-Content -Encoding Byte -Path $Image
+                    $tweet = [Tweetinvi.Tweet]::CreateTweet($Message)
+                    $tweet.AddMedia($file1)
+               }
+           }
 
-        $TweetResult = $TwClient.UpdateStatus($TweetOps)
-        $TweetResult.pstypenames.insert(0,'Tweet.SentMessage')
-        $TweetResult
+           if ($ReplyToID)
+            {
+                $tweet.InReplyToStatusId($ReplyToID)
+            }
+
+            if ($Longitude)
+            {
+                $sent = [Tweetinvi.Tweet]::TweetController.PublishTweetWithGeo($tweet, $Longitude, $Latitude)
+            }
+            else
+            {
+                $sent = [Tweetinvi.Tweet]::PublishTweet($tweet)
+            }
+
+            if ($sent)
+            {
+                $tweet
+            }
     }
     End{}
-}
+
+ }
 
 
 <#
@@ -329,41 +307,224 @@ function Send-Tweet
 #>
 function Remove-Tweet
 {
-    [CmdletBinding()]
-
+    [CmdletBinding(DefaultParameterSetName = 'Id')]
+    [OutputType()]
     Param
     (
+
+        # The ID of an existing status to remove..
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
+                   Position=0,
+                   ParameterSetName = 'Id')]
         [long]
-        $Id
+        $Id,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Tweet')]
+        [Tweetinvi.Core.Interfaces.ITweet]
+        $Tweet
+
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+         if ($logged -eq $null)
+         {
+            Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+            return
+         }
     }
     Process
     {
-        $StatusMsg = $TweetInstance.DestroyStatus($Id)
-        $StatusMsg.pstypenames.insert(0,'Tweet.SentMessage')
-        $StatusMsg
+        switch ($PSCmdlet.ParameterSetName)
+           {
+               'Id' 
+               {
+                    Write-Verbose -Message "Removing status with Id $($Id)"
+                    $Destroyed = [Tweetinvi.Tweet]::DestroyTweet($Id)
+               }
+
+               'Tweet'
+               {
+                    Write-Verbose -Message "Removing status with Id $($Tweet.Id)"
+                    $Destroyed = [Tweetinvi.Tweet]::DestroyTweet($Tweet)
+               }
+           }
+
+           if($Destroyed)
+           {
+                Write-Verbose 'Status deleted.'
+           }
+           else
+           {
+                Write-Error -Message 'Could not delete status.'
+           }
+           
     }
-    End
-    {
-    }
-}
+    End{}
+
+ }
 
 
 <#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Set-TweetFavorite
+{
+    [CmdletBinding(DefaultParameterSetName = 'Id')]
+    Param
+    (
+
+        # The ID of an existing status to remove..
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Tweet')]
+        [Tweetinvi.Core.Interfaces.ITweet]
+        $Tweet
+
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+         if ($logged -eq $null)
+         {
+            Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+            return
+         }
+    }
+    Process
+    {
+        switch ($PSCmdlet.ParameterSetName)
+           {
+               'Id' 
+               {
+                    Write-Verbose -Message "Setting favorite status to Tweet with Id $($Id)"
+                    $favorited = [Tweetinvi.Tweet]::FavoriteTweet($Id)
+                    $favorited
+               }
+
+               'Tweet'
+               {
+                    Write-Verbose -Message "Setting favorite status to Tweet with Id $($Tweet.Id)"
+                    $favorited = [Tweetinvi.Tweet]::FavoriteTweet($Tweet)
+                    $favorited
+               }
+           }
+
+           if($favorited)
+           {
+                Write-Verbose 'Status added to favorite list.'
+           }
+           else
+           {
+                Write-verbose -Message 'Could not add to favorite list.'
+           }
+           
+    }
+    End{}
+
+ }
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Remove-TweetFavorite
+{
+    [CmdletBinding(DefaultParameterSetName = 'Id')]
+    Param
+    (
+
+        # The ID of an existing status to remove..
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Tweet')]
+        [Tweetinvi.Core.Interfaces.ITweet]
+        $Tweet
+
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+         if ($logged -eq $null)
+         {
+            Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+            return
+         }
+    }
+    Process
+    {
+        switch ($PSCmdlet.ParameterSetName)
+           {
+               'Id' 
+               {
+                    Write-Verbose -Message "Removing favorite status to Tweet with Id $($Id)"
+                    $query = "https://api.twitter.com/1.1/favorites/destroy.json?id=$($Id)"
+                    $removed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $removed
+               }
+
+               'Tweet'
+               {
+                    Write-Verbose -Message "Removing favorite status to Tweet with Id $($Tweet.Id)"
+                    $query = "https://api.twitter.com/1.1/favorites/destroy.json?id=$($Tweet.Id)"
+                    $removed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $removed
+               }
+           }
+
+           if($removed)
+           {
+                Write-Verbose 'Status added to favorite list.'
+           }
+           else
+           {
+                Write-verbose -Message 'Could not add to favorite list.'
+           }
+           
+    }
+    End{}
+
+ }
+
+
+ <#
 .Synopsis
    Returns a collection of the most recent Tweets and retweets posted by 
    the authenticating user and the users they follow. 
@@ -387,15 +548,16 @@ function Get-TweetTimeline
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
+        [ValidateRange(1,200)]
         [int]
-        $Count,
+        $Count = 20,
 
         # This parameter will prevent replies from appearing in the returned 
         # timeline. 
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [switch]
-        $ExcludeReplies,
+        $ExclueReplies,
 
         # Returns results with an ID greater than (that is, more recent than)
         # the specified ID. There are limits to the number of Tweets which can
@@ -404,49 +566,36 @@ function Get-TweetTimeline
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [int32]
-        $SinceID
+        $SinceID,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $MaxID
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
         }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = new-object HigLabo.Net.Twitter.GetHomeTimelineCommand
     }
     Process
-    {
-        if ($Count)
-        {
-            $TimelineOptions.Count = $Count
-        }
+    {   
+        $TimelineParams = [Tweetinvi.Timeline]::CreateHomeTimelineRequestParameter()
 
-        if ($ExcludeReplies)
-        {
-            $TimelineOptions.ExcludeReplies = 'true'
-        }
+        $TimelineParams.MaximumNumberOfTweetsToRetrieve = $Count
 
-        if ($SinceID)
-        {
-            $TimelineOptions.SinceID = $SinceID
-        }
+        if ($ExclueReplies) { $TimelineParams.ExcludeReplies = $true }
 
+        if ($MaxID) { $TimelineParams.MaxId = $MaxID }
 
-        $TimelineResult = $TwClient.GetHomeTimeline($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.Message')
-            $Message | Add-Member -NotePropertyName Name -NotePropertyValue $Message.User.Name
-            $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
-            $Message
-        }
+        if ($SinceID) { $TimelineParams.SinceId = $SinceID }
+
+        [Tweetinvi.Timeline]::GetHomeTimeline($TimelineParams)
     }
     End{}
 }
@@ -454,13 +603,9 @@ function Get-TweetTimeline
 
 <#
 .Synopsis
-   Returns the 20 most recent mentions (tweets containing a users's 
-   @screen_name) for the authenticating user.
+   Short description
 .DESCRIPTION
-   Returns the 20 most recent mentions (tweets containing a users's 
-   @screen_name) for the authenticating user. The timeline returned 
-   is the equivalent of the one seen when you view your mentions on 
-   twitter.com. 
+   Long description
 .EXAMPLE
    Example of how to use this cmdlet
 .EXAMPLE
@@ -478,324 +623,14 @@ function Get-TweetMentionTimeline
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
         [int]
-        $Count,
+        $Count = 20,
 
         # This parameter will prevent replies from appearing in the returned 
         # timeline. 
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [switch]
-        $ExcludeReplies,
-
-        # Returns results with an ID greater than (that is, more recent than)
-        # the specified ID. There are limits to the number of Tweets which can
-        # be accessed. If the limit of Tweets has occured since the since_id,
-        # the since_id will be forced to the oldest ID available.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [int32]
-        $SinceID
-    )
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = new-object HigLabo.Net.Twitter.GetMentionsTimelineCommand
-    }
-    Process
-    {
-        if ($Count)
-        {
-            $TimelineOptions.Count = $Count
-        }
-
-        if ($ExcludeReplies)
-        {
-            $TimelineOptions.ExcludeReplies = 'true'
-        }
-
-        if ($SinceID)
-        {
-            $TimelineOptions.SinceID = $SinceID
-        }
-
-
-        $TimelineResult = $TwClient.GetMentionsTimeline($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.Message')
-            $Message | Add-Member -NotePropertyName Name -NotePropertyValue $Message.User.Name
-            $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
-            $Message
-        }
-    }
-    End{}
-}
-
-<#
-.Synopsis
-   Returns the most recent tweets authored by the authenticating user 
-   that have been retweeted by others. 
-.DESCRIPTION
-   Returns the most recent tweets authored by the authenticating user 
-   that have been retweeted by others. 
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Get-TweetRetweetTimeline
-{
-    [CmdletBinding()]
-    [OutputType([psobject])]
-    Param
-    (
-        # Specifies the number of records to retrieve. Must be less than or 
-        # equal to 200. Defaults to 20.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        [int]
-        $Count,
-
-        # This parameter will prevent replies from appearing in the returned 
-        # timeline. 
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [switch]
-        $ExcludeReplies,
-
-        # Returns results with an ID greater than (that is, more recent than)
-        # the specified ID. There are limits to the number of Tweets which can
-        # be accessed. If the limit of Tweets has occured since the since_id,
-        # the since_id will be forced to the oldest ID available.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [int32]
-        $SinceID
-    )
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = new-object HigLabo.Net.Twitter.GetRetweetsOfMeTimelineCommand
-    }
-    Process
-    {
-        if ($Count)
-        {
-            $TimelineOptions.Count = $Count
-        }
-
-        if ($ExcludeReplies)
-        {
-            $TimelineOptions.ExcludeReplies = 'true'
-        }
-
-        if ($SinceID)
-        {
-            $TimelineOptions.SinceID = $SinceID
-        }
-
-
-        $TimelineResult = $TwClient.GetRetweetsOfMeTimeline($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.Message')
-            $Message | Add-Member -NotePropertyName Name -NotePropertyValue $Message.User.Name
-            $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
-            $Message
-        }
-    }
-    End{}
-}
-
-<#
-.Synopsis
-   Returns the most recent tweets authored by the authenticating user 
-   that have been retweeted by others. 
-.DESCRIPTION
-   Returns the most recent tweets authored by the authenticating user 
-   that have been retweeted by others. 
-.EXAMPLE
-   PS C:\ Get-TweetUserTimeline -ScreenName jsnover -Count 2 -IncludeRT
-
-
-    ID         : 437942603602862082
-    Name       : jsnover
-    ScreenName : jsnover
-    Text       : @SuchTechnology DSC is a platform that Chef/Puppet can layer on.  We'll get the ecosystem to write providers &amp; everyone can use them.
-    CreatedAt  : 2/24/2014 1:30:27 PM +00:00
-    Source     : web
-
-    ID         : 437941912608071680
-    Name       : jsnover
-    ScreenName : jsnover
-    Text       : RT @SuchTechnology: If you are your team's genius or you ever worked with one, please take 5 to read @jsnover post "On Heroes" http://t.co/…
-    CreatedAt  : 2/24/2014 1:27:43 PM +00:00
-    Source     : web
-
-#>
-function Get-TweetUserTimeline
-{
-    [CmdletBinding(DefaultParameterSetName = 'ScreenName')]
-    [OutputType([psobject])]
-    Param
-    (
-        # Specifies the number of records to retrieve. Must be less than or 
-        # equal to 200. Defaults to 20.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        [int]
-        $Count,
-
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=1,
-                   ParameterSetName = 'UserID')]
-        [string]
-        $UserID,
-
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=1,
-                   ParameterSetName = 'ScreenName')]
-        [string]
-        $ScreenName,
-
-        # This parameter will prevent replies from appearing in the returned 
-        # timeline. 
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [switch]
-        $ExcludeReplies,
-
-        # Returns results with an ID greater than (that is, more recent than)
-        # the specified ID. There are limits to the number of Tweets which can
-        # be accessed. If the limit of Tweets has occured since the since_id,
-        # the since_id will be forced to the oldest ID available.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [int32]
-        $SinceID,
-
-        # Include ReTweets since the timeline will strip any native retweets 
-        # (though they will still count toward both the maximal length of the 
-        # timeline and the slice selected by the count parameter). 
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [switch]
-        $IncludeRT
-    )
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = new-object HigLabo.Net.Twitter.GetUserTimelineCommand
-    }
-    Process
-    {
-        if ($Count){ $TimelineOptions.Count = $Count }
-
-        if ($ExcludeReplies){ $TimelineOptions.ExcludeReplies = 'true' }
-
-        if ($SinceID){ $TimelineOptions.SinceID = $SinceID }
-
-        if ($IncludeRT){ $TimelineOptions.IncludeRts = 'true' }
-
-        if ($PSCmdlet.ParameterSetName -eq 'ScreenName')
-        {
-            $TimelineOptions.ScreenName = $ScreenName
-        }
-        else
-        {
-            $TimelineOptions.UserID = $UserID
-        }
-
-
-        $TimelineResult = $TwClient.GetUserTimeline($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.Message')
-            $Message | Add-Member -NotePropertyName Name -NotePropertyValue $Message.User.Name
-            $Message | Add-Member -NotePropertyName ScreenName -NotePropertyValue $Message.User.ScreenName
-            $Message
-        }
-    }
-    End{}
-}
-
-
-<#
-.SYNOPSIS
-    Returns the most recent direct messages sent to the authenticating user
-
-.DESCRIPTION
-    Returns the 20 most recent direct messages by default sent to the
-    authenticating user. Includes detailed information about the sender
-    and recipient user. 
-
-.PARAMETER Count
-    Specifies the number of records to retrieve. Must be less than or 
-    equal to 200. Defaults to 20.
-
-.PARAMETER SinceID
-    Returns results with an ID greater than (that is, more recent than)
-    the specified ID. There are limits to the number of Tweets which can
-    be accessed. If the limit of Tweets has occured since the since_id,
-    the since_id will be forced to the oldest ID available.
-
-.PARAMETER MaxID
-    Returns results with an ID less than (that is, older than) or equal 
-    to the specified ID.
-
-
-.NOTES
-    Important: This method requires an access token with RWD (read, write & 
-    direct message) permissions.
-
-#>
-function Get-TweetDMTimeline
-{
-    [CmdletBinding()]
-    [OutputType([psobject])]
-    Param
-    (
-        # Specifies the number of records to retrieve. Must be less than or 
-        # equal to 200. Defaults to 20.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        [int]
-        $Count,
+        $ExclueReplies,
 
         # Returns results with an ID greater than (that is, more recent than)
         # the specified ID. There are limits to the number of Tweets which can
@@ -814,184 +649,33 @@ function Get-TweetDMTimeline
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
         }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = New-Object HigLabo.Net.Twitter.GetDirectMessageListCommand
     }
     Process
-    {
-        if ($Count)
-        {
-            $TimelineOptions.Count = $Count
-        }
+    {   
+        $TimelineParams = [Tweetinvi.Timeline]::CreateMentionsTimelineRequestParameters()
 
-        if ($MaxID)
-        {
-            $TimelineOptions.MaxID = $MaxID
-        }
+        $TimelineParams.MaximumNumberOfTweetsToRetrieve = $Count
 
-        if ($Page)
-        {
-            $TimelineOptions.Page = $Page
-        }
+        if ($ExclueReplies) { $TimelineParams.ExcludeReplies = $true }
 
-        if ($SinceID)
-        {
-            $TimelineOptions.SinceID = $SinceID
-        }
+        if ($MaxID) { $TimelineParams.MaxId = $MaxID }
 
+        if ($SinceID) { $TimelineParams.SinceId = $SinceID }
 
-        $TimelineResult = $TwClient.GetDirectMessageList($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.DirectMessage')
-            $Message
-        }
+        [Tweetinvi.Timeline]::GetMentionsTimeline($TimelineParams)
     }
     End{}
 }
 
-
-<#
-.Synopsis
-   Short description
-.DESCRIPTION
-   Long description
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Get-TweetDMSentTimeline
-{
-    [CmdletBinding()]
-    [OutputType([psobject])]
-    Param
-    (
-        # Specifies the number of records to retrieve. Must be less than or 
-        # equal to 200. Defaults to 20.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        [int]
-        $Count,
-
-        # Returns results with an ID greater than (that is, more recent than)
-        # the specified ID. There are limits to the number of Tweets which can
-        # be accessed. If the limit of Tweets has occured since the since_id,
-        # the since_id will be forced to the oldest ID available.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [int32]
-        $SinceID,
-
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [int32]
-        $MaxID
-    )
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        # Set options for the query of messages
-        $TimelineOptions = New-Object HigLabo.Net.Twitter.GetDirectMessageListCommand
-    }
-    Process
-    {
-        if ($Count)
-        {
-            $TimelineOptions.Count = $Count
-        }
-
-        if ($MaxID)
-        {
-            $TimelineOptions.MaxID = $MaxID
-        }
-
-        if ($Page)
-        {
-            $TimelineOptions.Page = $Page
-        }
-
-        if ($SinceID)
-        {
-            $TimelineOptions.SinceID = $SinceID
-        }
-
-
-        $TimelineResult = $TwClient.GetDirectMessageListSent($TimelineOptions)
-        foreach($Message in $TimelineResult)
-        {
-            $Message.pstypenames.insert(0,'Tweet.DirectMessage')
-            $Message
-        }
-    }
-    End{}
-}
-
-
-<#
-.Synopsis
-   Short description
-.DESCRIPTION
-   Long description
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Remove-TweetDM
-{
-    [CmdletBinding()]
-    [OutputType([psobject])]
-    Param
-    (
-        # Specifies the number of records to retrieve. Must be less than or 
-        # equal to 200. Defaults to 20.
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        [long]
-        $Id
-    )
-
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-    }
-    Process
-    {
-        $DeletedDM = $TwClient.DestroyDirectMessage($Id)
-        $DeletedDM.pstypenames.insert(0,'Tweet.DirectMessage')
-        $DeletedDM
-    }
-    End{}
-}
-
+##################
+# Direct Message #
+##################
 
 <#
 .Synopsis
@@ -1006,46 +690,46 @@ function Remove-TweetDM
 function Send-TweetDM
 {
     [CmdletBinding()]
-    [OutputType([psobject])]
     Param
     (
-        # Twitter message to send. Limit of 140 charecters.
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        $Recipient,
+
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=1)]
         [ValidateLength(1,140)]
         [string]
-        $Message,
-
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0)]
-        $ScreenName
+        $Message
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
         }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        $DMOps = New-Object HigLabo.Net.Twitter.NewDirectMessageCommand
     }
     Process
     {
-        $DMOps.Text = $Message
-        $DMOps.ScreenName = $ScreenName
-        $TweetResult = $TwClient.NewDirectMessage($DMOps)
-        $TweetResult.pstypenames.insert(0,'Tweet.DirectMessage')
-        $TweetResult
+        $userobj = [Tweetinvi.User]::GetUserFromScreenName('infosectactico')
+        if ($userobj)
+        {
+            [Tweetinvi.Message]::CreateMessage($Message, $userobj).Publish()
+        }
+        else
+        {
+            Write-Error -Message 'Recipient could not be found'   
+        }
     }
-    End{}
+    End
+    {
+    }
 }
+
 
 <#
 .Synopsis
@@ -1057,50 +741,384 @@ function Send-TweetDM
 .EXAMPLE
    Another example of how to use this cmdlet
 #>
-function Get-TweetBlockList
+function Get-TweetDMSent
 {
     [CmdletBinding()]
     Param
     (
         [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [switch]$IncludeEntities,
-
-        [Parameter(Mandatory=$false,
-                   ValueFromPipelineByPropertyName=$true)]
-        [switch]$SkipStatus
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [int]
+        $Count = 20
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        $BlockCmd = New-Object HigLabo.Net.Twitter.GetBlocksListCommand
-
-        if ($IncludeEntities)
-        {
-            $BlockCmd.IncludeEntities = $IncludeEntities
-        }
-
-        if ($SkipStatus)
-        {
-            $BlockCmd.SkipStatus = $SkipStatus
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           
         }
     }
     Process
     {
-        $BlockedUsers = $TwClient.GetBlocksList($BlockCmd).users
-        foreach($bUser in $BlockedUsers)
+        [Tweetinvi.Message]::GetLatestMessagesSent($Count)
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetDMReceived
+{
+    [CmdletBinding()]
+    Param
+    (
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0)]
+        [int]
+        $Count = 20
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
-            $bUser
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           
+        }
+    }
+    Process
+    {
+        [Tweetinvi.Message]::GetLatestMessagesReceived($Count)
+    }
+    End
+    {
+    }
+}
+
+
+########
+# User #
+########
+
+
+ <#
+ .Synopsis
+    Short description
+ .DESCRIPTION
+    Long description
+ .EXAMPLE
+    Example of how to use this cmdlet
+ .EXAMPLE
+    Another example of how to use this cmdlet
+ #>
+ function Get-TweetUser
+ {
+     [CmdletBinding(DefaultParameterSetName = 'ScreenName')]
+     Param
+     (
+         [Parameter(Mandatory=$false,
+                    ValueFromPipelineByPropertyName=$true,
+                    Position=0,
+                    ParameterSetName = 'Id')]
+         [int32]
+         $Id,
+         
+         [Parameter(Mandatory=$false,
+                    ValueFromPipelineByPropertyName=$true,
+                    Position=0,
+                    ParameterSetName = 'ScreenName')]
+         [string]
+         $ScreenName
+     )
+ 
+     Begin
+     {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           
+        }
+     }
+     Process
+     {
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'Id' 
+            {
+                $Tuser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($Tuser)
+                {
+                    $Tuser
+                }
+                else
+                {
+                    Write-Error -Message "User with Id $($Id) was not found."
+                    return
+                }
+                }
+            'ScreenName' 
+            {
+                if ($ScreenName)
+                {
+                    $Tuser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                    if ($Tuser)
+                    {
+                        $Tuser
+                    }
+                    else
+                    {
+                        Write-Error -Message "User with screen name $($ScreenName) was not found."
+                        return
+                    }
+                }
+                else
+                {
+                    [Tweetinvi.User]::GetLoggedUser()
+                }
+            }   
+        }
+     }
+     End
+     {
+     }
+ }
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetUserFollower
+{
+     [CmdletBinding(DefaultParameterSetName = 'LoggedOn')]
+    Param
+    (
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1)]
+        [Int]
+        $Count = 20
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+        }
+    }
+    Process
+    {
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'LoggedOn'
+            {
+                $LoggedOnUser = [Tweetinvi.User]::GetLoggedUser()
+                [Tweetinvi.User]::GetFollowers($LoggedOnUser, $Count)
+            }
+            'Id'
+            {
+                [Tweetinvi.User]::GetFollowers($Id, $Count)
+            }
+            'ScreenName'
+            {
+                [Tweetinvi.User]::GetFollowers($ScreenName, $Count)
+            }
+        }
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetUserFriend
+{
+     [CmdletBinding(DefaultParameterSetName = 'LoggedOn')]
+    Param
+    (
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1)]
+        [Int]
+        $Count = 20
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+        }
+    }
+    Process
+    {
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'LoggedOn'
+            {
+                $LoggedOnUser = [Tweetinvi.User]::GetLoggedUser()
+                [Tweetinvi.User]::GetFriends($LoggedOnUser, $Count)
+            }
+            'Id'
+            {
+                [Tweetinvi.User]::GetFriends($Id, $Count)
+            }
+            'ScreenName'
+            {
+                [Tweetinvi.User]::GetFriends($ScreenName, $Count)
+            }
+        }
+    }
+    End
+    {
+    }
+}
+
+
+<#
+.Synopsis
+   Short description
+.DESCRIPTION
+   Long description
+.EXAMPLE
+   Example of how to use this cmdlet
+.EXAMPLE
+   Another example of how to use this cmdlet
+#>
+function Get-TweetUserFavorite
+{
+    [CmdletBinding(DefaultParameterSetName = 'LoggedOn')]
+    Param
+    (
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1)]
+        [Int]
+        $Count = 20
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+        }
+    }
+    Process
+    {
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'LoggedOn'
+            {
+                $LoggedOnUser = [Tweetinvi.User]::GetLoggedUser()
+                [Tweetinvi.User]::GetFavouriteTweets($LoggedOnUser, $Count)
+            }
+            'Id'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($TweetUser -ne $null)
+                {
+                    [Tweetinvi.User]::GetFavouriteTweets($TweetUser, $Count)
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with Id $($Id)."
+                }
+            }
+            'ScreenName'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                if ($TweetUser -ne $null)
+                {
+                    [Tweetinvi.User]::GetFavouriteTweets($TweetUser, $Count)
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
+                }
+            }
         }
     }
     End
@@ -1125,31 +1143,58 @@ function Block-TweetUser
     Param
     (
         [Parameter(Mandatory=$true,
-            ValueFromPipelineByPropertyName=$true,
-            Position=0)]
-        $ScreenName
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
         }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        $BlockOps = New-Object HigLabo.Net.Twitter.CreateBlocksCommand
     }
     Process
     {
-        $BlockOps.ScreenName = $ScreenName
-        $bUser = $TwClient.CreateBlocks($BlockOps)
-
-        $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
-        $bUser
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'Id'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($TweetUser -ne $null)
+                {
+                    [Tweetinvi.User]::BlockUser($TweetUser)
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with Id $($Id)."
+                }
+            }
+            'ScreenName'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                if ($TweetUser -ne $null)
+                {
+                    [Tweetinvi.User]::BlockUser($TweetUser)
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
+                }
+            }
+        }
     }
     End
     {
@@ -1173,119 +1218,123 @@ function Unblock-TweetUser
     Param
     (
         [Parameter(Mandatory=$true,
-            ValueFromPipelineByPropertyName=$true,
-            Position=0)]
-        $ScreenName
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
         }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-
-        $BlockOps = New-Object HigLabo.Net.Twitter.DestroyBlocksCommand
     }
     Process
     {
-        $BlockOps.ScreenName = $ScreenName
-        $bUser = $TwClient.DestroyBlocks($BlockOps)
-
-        $bUser.pstypenames.insert(0, 'Tweet.User.Blocked')
-        $bUser
-    }
-    End
-    {
-    }
-}
-
-
-<#
-.Synopsis
-   Short description
-.DESCRIPTION
-   Long description
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Remove-TweetFollow
-{
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'Id'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($TweetUser -ne $null)
+                {
+                    {
     [CmdletBinding()]
     Param
     (
         [Parameter(Mandatory=$true,
-            ValueFromPipelineByPropertyName=$true,
-            Position=0)]
-        $ScreenName
-    )
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
 
-    Begin
-    {
-        if (!(Test-Path variable:Global:TweetInstance ))
-        {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
-        }
-    }
-    Process
-    {
-        $TwUser = $TwClient.DestroyFriendship($ScreenName)
-        $TwUser.pstypenames.insert(0, 'Tweet.User')
-        $TwUser
-    }
-    End
-    {
-    }
-}
-
-
-<#
-.Synopsis
-   Short description
-.DESCRIPTION
-   Long description
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Add-TweetFollow
-{
-    [CmdletBinding()]
-    Param
-    (
         [Parameter(Mandatory=$true,
-            ValueFromPipelineByPropertyName=$true,
-            Position=0)]
-        $ScreenName
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id
     )
 
     Begin
     {
-        if (!(Test-Path variable:Global:TweetInstance ))
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
         {
-            throw 'No connection present.'
-        }
-        else
-        {
-            $TwClient = $Global:TweetInstance
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
         }
     }
     Process
     {
-        $TwUser = $TwClient.CreateFriendship($ScreenName)
-        $TwUser.pstypenames.insert(0, 'Tweet.User')
-        $TwUser
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'Id'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($TweetUser -ne $null)
+                {
+                    $query = "https://api.twitter.com/1/blocks/destroy.json?user_id=$($TweetUser.Id)"
+                    $blockSuccessfullyDestroyed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $blockSuccessfullyDestroyed
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with Id $($Id)."
+                }
+            }
+            'ScreenName'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                if ($TweetUser -ne $null)
+                {
+                    $query = "https://api.twitter.com/1/blocks/destroy.json?user_id=$($TweetUser.Id)"
+                    $blockSuccessfullyDestroyed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $blockSuccessfullyDestroyed
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
+                }
+            }
+        }
+    }
+    End
+    {
+    }
+}
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with Id $($Id)."
+                }
+            }
+            'ScreenName'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                if ($TweetUser -ne $null)
+                {
+                    [Tweetinvi.User]::BlockUser($TweetUser)
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
+                }
+            }
+        }
     }
     End
     {
@@ -1293,40 +1342,170 @@ function Add-TweetFollow
 }
 
 
-<#
-.Synopsis
-   Short description
-.DESCRIPTION
-   Long description
-.EXAMPLE
-   Example of how to use this cmdlet
-.EXAMPLE
-   Another example of how to use this cmdlet
-#>
-function Get-TweetFollowing
-{
-    [CmdletBinding()]
-    [OutputType([int])]
-    Param
-    (
-        # Param1 help description
+ ##########
+ # Search #
+ ##########
+
+ <#
+ .Synopsis
+    Short description
+ .DESCRIPTION
+    Long description
+ .EXAMPLE
+    Example of how to use this cmdlet
+ .EXAMPLE
+    Another example of how to use this cmdlet
+ #>
+ function Search-Tweet
+ {
+     [CmdletBinding(DefaultParameterSetName = 'Regular')]
+     Param
+     (
+         # The number of tweets to return per page, up to a maximum of 100.
+         [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=1,
+                   ParameterSetName = 'Regular')]
+        [ValidateRange(1,100)]
+        [int]
+        $Count = 20,
+
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=0)]
-        $Param1,
+        [string]
+        $Query,
 
-        # Param2 help description
+        # Returns results with an ID greater than (that is, more recent than)
+        # the specified ID. There are limits to the number of Tweets which can
+        # be accessed. If the limit of Tweets has occured since the since_id,
+        # the since_id will be forced to the oldest ID available.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $SinceID,
+
+        # Returns results with an ID less than (that is, older than) or equal 
+        # to the specified ID.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [int32]
+        $MaxID,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [DateTime]
+        $Since,
+
+        # Returns tweets generated before the given date. 
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [DateTime]
+        $Until,
+
+        # Optional. Specifies what type of search results you would prefer to receive. 
+        # The current default is "mixed." Valid values include:
+        # * mixed: Include both popular and real time results in the response.
+        # * recent: return only the most recent results in the response
+        # * popular: return only the most popular results in the response.
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [ValidateSet('Mixed', 'Recent', 'Popular')]
+        [String]
+        $SearchType,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName = 'Geo')]
+        [double]
+        $Latitude,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName = 'Geo')]
+        [double]
+        $Longitude,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   ParameterSetName = 'Geo')]
         [int]
-        $Param2
-    )
+        $Radius,
 
-    Begin
-    {
-    }
-    Process
-    {
-    }
-    End
-    {
-    }
-}
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [ValidateSet('All', 'OriginalTweetsOnly', 'RetweetsOnly')]
+        [String]
+        $Filter
+
+     )
+ 
+     Begin
+     {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+           return
+        }
+     }
+     Process
+     {
+        # Set Parameters
+        $SearchParams = [Tweetinvi.Search]::GenerateSearchTweetParameter($Query)
+
+        # SetFilter
+        if ($Filter)
+        {
+            switch ($Filter)
+            {
+                'All'                
+                { $UseFilter = [Tweetinvi.Core.Interfaces.Models.Parameters.TweetSearchFilter]::All }
+                
+                'OriginalTweetsOnly' 
+                { $UseFilter = [Tweetinvi.Core.Interfaces.Models.Parameters.TweetSearchFilter]::OriginalTweetsOnly }
+                
+                'RetweetsOnly'       
+                { $UseFilter = [Tweetinvi.Core.Interfaces.Models.Parameters.TweetSearchFilter]::RetweetsOnly }
+            }
+
+            $SearchParams.TweetSearchFilter = $UseFilter
+        }
+
+        # Set search type.
+        if ($SearchType)
+        {
+            switch ($SearchType)
+            {
+                'Mixed'                
+                { $SrchType = [Tweetinvi.Core.Enum.SearchResultType]::Mixed }
+                
+                'Recent' 
+                { $SrchType = [Tweetinvi.Core.Enum.SearchResultType]::Recent }
+                
+                'Popular'       
+                { $SrchType = [Tweetinvi.Core.Enum.SearchResultType]::Popular }
+            }
+
+            $SearchParams.SearchType = $SrchType
+        }
+
+        # Set Geo Search
+        if ($PSCmdlet.ParameterSetName -eq 'Geo')
+        {
+            $SearchParams.SetGeoCode($Longitude, $Latitude, $Radius)
+        }
+
+        # Set remaining parameters
+        if ($Count) {$SearchParams.MaximumNumberOfResults = $Count}
+        if ($MaxID) {$SearchParams.MaxId = $MaxID}
+        if ($SinceID) {$SearchParams.SinceId = $SinceID}
+        if ($Since) {$SearchParams.Since = $Since}
+        if ($Until) {$SearchParams.Until = $Until}
+
+        [Tweetinvi.Search]::SearchTweets($SearchParams)
+     }
+     End
+     {
+     }
+ }
