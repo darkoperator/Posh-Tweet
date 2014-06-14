@@ -603,9 +603,11 @@ function Get-TweetTimeline
 
 <#
 .Synopsis
-   Short description
+   Allows one to enable or disable retweets and device notifications 
+   from the specified user.
 .DESCRIPTION
-   Long description
+   Allows one to enable or disable retweets and device notifications 
+   from the specified user.
 .EXAMPLE
    Example of how to use this cmdlet
 .EXAMPLE
@@ -671,6 +673,135 @@ function Get-TweetMentionTimeline
         [Tweetinvi.Timeline]::GetMentionsTimeline($TimelineParams)
     }
     End{}
+}
+
+
+<#
+.Synopsis
+   Allows one to enable or disable retweets and device notifications 
+   from the specified user.
+.DESCRIPTION
+   Allows one to enable or disable retweets and device notifications 
+   from the specified user.
+.EXAMPLE
+   Update-TweetFriendNotification -ScreenName "infosectactico" -EnableDeviceNotification
+#>
+function Update-TweetFriendNotification
+{
+     [CmdletBinding(DefaultParameterSetName = 'ScreenName')]
+    Param
+    (
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'ScreenName')]
+        [string]
+        $ScreenName,
+
+        [Parameter(Mandatory=$true,
+                   ValueFromPipelineByPropertyName=$true,
+                   Position=0,
+                   ParameterSetName = 'Id')]
+        [long]
+        $Id,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]
+        $EnableDeviceNotification,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]
+        $EnableRetweetNotification,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]
+        $DisableDeviceNotification,
+
+        [Parameter(Mandatory=$false,
+                   ValueFromPipelineByPropertyName=$true)]
+        [switch]
+        $DisableRetweetNotification
+    )
+
+    Begin
+    {
+        $logged = [Tweetinvi.User]::GetLoggedUser()
+        if ($logged -eq $null)
+        {
+           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
+        }
+    }
+    Process
+    {
+        $URI = 'https://api.twitter.com/1.1/friendships/update.json?'
+        $paramstring = ""
+
+        # Set parameters
+        if ($EnableDeviceNotification)   
+        { 
+            Write-Verbose -Message 'Enable device notification was selected.'
+            $paramstring + "&device=true" | Out-Null 
+        }
+
+        if ($EnableRetweetNotification)  
+        { 
+            Write-Verbose -Message 'Enable retweet notification was selected.'
+            $paramstring + "&retweets=true" | Out-Null 
+        }
+
+        if ($DisableDeviceNotification)  
+        { 
+            Write-Verbose -Message 'Disable device notification was selected.'
+            $paramstring + "&device=false" | Out-Null 
+        }
+
+        if ($DisableRetweetNotification) 
+        { 
+            Write-Verbose -Message 'Disable retweet notification was selected.'
+            $paramstring + '&retweets=false' | Out-Null 
+        }
+
+        switch ($PSCmdlet.ParameterSetName)
+        {
+            'Id'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
+                if ($TweetUser -ne $null)
+                {
+                    Write-Verbose -Message "Updating notifications for $($TweetUser.ScreenName)."
+                    $query = "$($URI)user_id=$($TweetUser.Id)$($paramstring)"
+                    $FiendshipSettings = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $FiendshipSettings
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with Id $($Id)."
+                }
+            }
+            'ScreenName'
+            {
+                $TweetUser = [Tweetinvi.User]::GetUserFromScreenName($ScreenName)
+                if ($TweetUser -ne $null)
+                {
+                    Write-Verbose -Message "Updating notifications for $($ScreenName)."
+                    $query = "$($URI)screen_name=$($ScreenName)$($paramstring)"
+                    $FiendshipSettings = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
+                    $FiendshipSettings
+                }
+                else
+                {
+                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
+                }
+            }
+        }
+    }
+    End
+    {
+    }
 }
 
 ##################
