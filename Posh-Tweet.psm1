@@ -1381,43 +1381,6 @@ function Unblock-TweetUser
                 $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
                 if ($TweetUser -ne $null)
                 {
-                    {
-    [CmdletBinding()]
-    Param
-    (
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0,
-                   ParameterSetName = 'ScreenName')]
-        [string]
-        $ScreenName,
-
-        [Parameter(Mandatory=$true,
-                   ValueFromPipelineByPropertyName=$true,
-                   Position=0,
-                   ParameterSetName = 'Id')]
-        [long]
-        $Id
-    )
-
-    Begin
-    {
-        $logged = [Tweetinvi.User]::GetLoggedUser()
-        if ($logged -eq $null)
-        {
-           Write-Error -Message 'You are not currently logged in, please use Connect-TweetService command to connect.'
-           return
-        }
-    }
-    Process
-    {
-        switch ($PSCmdlet.ParameterSetName)
-        {
-            'Id'
-            {
-                $TweetUser = [Tweetinvi.User]::GetUserFromId($Id)
-                if ($TweetUser -ne $null)
-                {
                     $query = "https://api.twitter.com/1/blocks/destroy.json?user_id=$($TweetUser.Id)"
                     $blockSuccessfullyDestroyed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
                     $blockSuccessfullyDestroyed
@@ -1435,18 +1398,7 @@ function Unblock-TweetUser
                     $query = "https://api.twitter.com/1/blocks/destroy.json?user_id=$($TweetUser.Id)"
                     $blockSuccessfullyDestroyed = [Tweetinvi.TwitterAccessor]::TryExecutePOSTQuery($query)
                     $blockSuccessfullyDestroyed
-                }
-                else
-                {
-                    Write-Error -Message "Could not find a user with screen name $($ScreenName)."
-                }
-            }
-        }
-    }
-    End
-    {
-    }
-}
+               
                 }
                 else
                 {
@@ -1640,3 +1592,315 @@ function Unblock-TweetUser
      {
      }
  }
+
+
+ ############
+ # Settings #
+ ############
+
+ <#
+ .Synopsis
+    Short description
+ .DESCRIPTION
+    Long description
+ .EXAMPLE
+    Example of how to use this cmdlet
+ .EXAMPLE
+    Another example of how to use this cmdlet
+ #>
+ function Set-TweetAccountSettings
+ {
+     [CmdletBinding()]
+     [Alias()]
+     [OutputType([int])]
+     Param
+     (
+
+     )
+ 
+     DynamicParam {
+        
+        # Initialize objects for the parameter
+        $RuntimeParameterDictionary = New-Object System.Management.Automation.RuntimeDefinedParameterDictionary
+
+        # Initialize objects for Language Parameter
+        $LangAttribute              = New-Object System.Management.Automation.ParameterAttribute
+        $LangValidateSetAttribute   = New-Object System.Management.Automation.ValidateSetAttribute($LangNames)
+        $LangAttributeCollection    = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+        # Initialize objects for TimeZone Parameter
+        $TZAttribute              = New-Object System.Management.Automation.ParameterAttribute
+        $TZValidateSetAttribute   = New-Object System.Management.Automation.ValidateSetAttribute($RailsTimezoneNames)
+        $TZAttributeCollection    = New-Object System.Collections.ObjectModel.Collection[System.Attribute]
+
+        # Set Attributes for Language Parameter
+        $LangAttribute.Mandatory   = $false
+        $LangAttribute.HelpMessage = 'Main language name to identfy the account with.'
+        $LangAttributeCollection.Add($LangAttribute)
+        $LangAttributeCollection.Add($LangValidateSetAttribute)
+        $LangRuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter("Language", 
+                                    [string], 
+                                    $LangAttributeCollection)
+
+        # Set Attributes for Timezone Parameter
+        $TZAttribute.Mandatory   = $false
+        $TZAttribute.HelpMessage = 'Time Zone name to identfy the account with.'
+        $TZAttributeCollection.Add($TZAttribute)
+        $TZAttributeCollection.Add($TZValidateSetAttribute)
+        $TZRuntimeParameter = New-Object System.Management.Automation.RuntimeDefinedParameter("TimeZone", 
+                                    [string], 
+                                    $TZAttributeCollection)
+
+        # Add  Runtime Parameter
+        $RuntimeParameterDictionary.Add("Language", $LangRuntimeParameter)
+        $RuntimeParameterDictionary.Add("TimeZone", $TZRuntimeParameter)
+        return $RuntimeParameterDictionary
+     }
+
+     Begin
+     {
+     }
+     Process
+     {
+     }
+     End
+     {
+     }
+ }
+ #############
+ # Variables #
+ #############
+
+ $LangNames = @("French", "English", "Arabic", "Japanese",
+                "Spanish",
+                "German",
+                "Italian",
+                "Indonesian",
+                "Portuguese",
+                "Korean",
+                "Turkish",
+                "Russian",
+                "Dutch",
+                "Filipino",
+                "Malay",
+                "Traditional Chinese",
+                "Simplified Chinese",
+                "Hindi",
+                "Norwegian",
+                "Swedish",
+                "Finnish",
+                "Danish",
+                "Polish",
+                "Hungarian",
+                "Farsi",
+                "Hebrew",
+                "Urdu",
+                "Thai",
+                "English UK")
+
+$LangTable = @{"French"               = "fr"
+                "English"             = "en"
+                "Arabic"              = "ar"
+                "Japanese"            = "ja"
+                "Spanish"             = "es"
+                "German"              = "de"
+                "Italian"             = "it"
+                "Indonesian"          = "id"
+                "Portuguese"          = "pt"
+                "Korean"              = "ko"
+                "Turkish"             = "tr"
+                "Russian"             = "ru"
+                "Dutch"               = "nl"
+                "Filipino"            = "fil"
+                "Malay"               = "msa"
+                "Traditional Chinese" = "zh-tw"
+                "Simplified Chinese"  = "zh-cn"
+                "Hindi"               = "hi"
+                "Norwegian"           = "no"
+                "Swedish"             = "sv"
+                "Finnish"             = "fi"
+                "Danish"              = "da"
+                "Polish"              = "pl"
+                "Hungarian"           = "hu"
+                "Farsi"               = "fa"
+                "Hebrew"              = "he"
+                "Urdu"                = "ur"
+                "Thai"                = "th"
+                "English UK"          = "en-gb"}
+
+$RailsTimezoneNames = @("International Date Line West", "Midway Island", "American Samoa",
+                        "Hawaii", "Alaska", "Pacific Time (US & Canada)", "Tijuana",
+                        "Mountain Time (US & Canada)", "Arizona", "Chihuahua", "Mazatlan",
+                        "Central Time (US & Canada)", "Saskatchewan", "Guadalajara",
+                        "Mexico City", "Monterrey", "Central America", 
+                        "Eastern Time (US & Canada)", "Indiana (East)", "Bogota",
+                        "Lima", "Quito", "Atlantic Time (Canada)", "Caracas", "La Paz",
+                        "Santiago", "Newfoundland", "Brasilia", "Buenos Aires",
+                        "Georgetown", "Greenland", "Mid-Atlantic", "Azores",
+                        "Cape Verde Is.", "Dublin", "Edinburgh", "Lisbon","London",
+                        "Casablanca", "Monrovia", "UTC", "Belgrade", "Bratislava",
+                        "Budapest", "Ljubljana", "Prague", "Sarajevo","Skopje",
+                        "Warsaw", "Zagreb", "Brussels", "Copenhagen", "Madrid",
+                        "Paris", "Amsterdam", "Berlin", "Bern", "Rome", "Stockholm",
+                        "Vienna", "West Central Africa", "Bucharest", "Cairo",
+                        "Helsinki", "Kyiv", "Riga", "Sofia", "Tallinn", "Vilnius",
+                        "Athens", "Istanbul", "Minsk", "Jerusalem", "Harare",
+                        "Pretoria", "Moscow", "St. Petersburg", "Volgograd", "Kuwait",
+                        "Riyadh", "Nairobi", "Baghdad", "Tehran", "Abu Dhabi", "Muscat",
+                        "Baku", "Tbilisi", "Yerevan", "Kabul", "Ekaterinburg", "Islamabad",
+                        "Karachi", "Tashkent", "Chennai", "Kolkata", "Mumbai", "New Delhi",
+                        "Kathmandu", "Astana", "Dhaka", "Sri Jayawardenepura", "Almaty",
+                        "Novosibirsk", "Rangoon", "Bangkok", "Hanoi", "Jakarta", 
+                        "Krasnoyarsk", "Beijing", "Chongqing", "Hong Kong", "Urumqi",
+                        "Kuala Lumpur", "Singapore", "Taipei", "Perth", "Irkutsk",
+                        "Ulaan Bataar", "Seoul", "Osaka", "Sapporo", "Tokyo", "Yakutsk",
+                        "Darwin", "Adelaide", "Canberra", "Melbourne", "Sydney",
+                        "Brisbane", "Hobart", "Vladivostok", "Guam", "Port Moresby",
+                        "Magadan", "Solomon Is.", "New Caledonia", "Fiji", "Kamchatka",
+                        "Marshall Is.", "Auckland", "Wellington", "Nuku'alofa",
+                        "Tokelau Is.","Samoa")
+
+$RailsTimezoneTable = @{"International Date Line West" = "Pacific/Midway"
+                        "Midway Island" = "Pacific/Midway"
+                        "American Samoa" = "Pacific/Pago_Pago"
+                        "Hawaii" = "Pacific/Honolulu"
+                        "Alaska" = "America/Juneau"
+                        "Pacific Time (US & Canada)" = "America/Los_Angeles"
+                        "Tijuana" = "America/Tijuana"
+                        "Mountain Time (US & Canada)" = "America/Denver"
+                        "Arizona" = "America/Phoenix"
+                        "Chihuahua" = "America/Chihuahua"
+                        "Mazatlan" = "America/Mazatlan"
+                        "Central Time (US & Canada)" = "America/Chicago"
+                        "Saskatchewan" = "America/Regina"
+                        "Guadalajara" = "America/Mexico_City"
+                        "Mexico City" = "America/Mexico_City"
+                        "Monterrey" = "America/Monterrey"
+                        "Central America" = "America/Guatemala"
+                        "Eastern Time (US & Canada)" = "America/New_York"
+                        "Indiana (East)" = "America/Indiana/Indianapolis"
+                        "Bogota" = "America/Bogota"
+                        "Lima" = "America/Lima"
+                        "Quito" = "America/Lima"
+                        "Atlantic Time (Canada)" = "America/Halifax"
+                        "Caracas" = "America/Caracas"
+                        "La Paz" = "America/La_Paz"
+                        "Santiago" = "America/Santiago"
+                        "Newfoundland" = "America/St_Johns"
+                        "Brasilia" = "America/Sao_Paulo"
+                        "Buenos Aires" = "America/Argentina/Buenos_Aires"
+                        "Georgetown" = "America/Guyana"
+                        "Greenland" = "America/Godthab"
+                        "Mid-Atlantic" = "Atlantic/South_Georgia"
+                        "Azores" = "Atlantic/Azores"
+                        "Cape Verde Is." = "Atlantic/Cape_Verde"
+                        "Dublin" = "Europe/Dublin"
+                        "Edinburgh" = "Europe/London"
+                        "Lisbon" = "Europe/Lisbon"
+                        "London" = "Europe/London"
+                        "Casablanca" = "Africa/Casablanca"
+                        "Monrovia" = "Africa/Monrovia"
+                        "UTC" = "Etc/UTC"
+                        "Belgrade" = "Europe/Belgrade"
+                        "Bratislava" = "Europe/Bratislava"
+                        "Budapest" = "Europe/Budapest"
+                        "Ljubljana" = "Europe/Ljubljana"
+                        "Prague" = "Europe/Prague"
+                        "Sarajevo" = "Europe/Sarajevo"
+                        "Skopje" = "Europe/Skopje"
+                        "Warsaw" = "Europe/Warsaw"
+                        "Zagreb" = "Europe/Zagreb"
+                        "Brussels" = "Europe/Brussels"
+                        "Copenhagen" = "Europe/Copenhagen"
+                        "Madrid" = "Europe/Madrid"
+                        "Paris" = "Europe/Paris"
+                        "Amsterdam" = "Europe/Amsterdam"
+                        "Berlin" = "Europe/Berlin"
+                        "Bern" = "Europe/Berlin"
+                        "Rome" = "Europe/Rome"
+                        "Stockholm" = "Europe/Stockholm"
+                        "Vienna" = "Europe/Vienna"
+                        "West Central Africa" = "Africa/Algiers"
+                        "Bucharest" = "Europe/Bucharest"
+                        "Cairo" = "Africa/Cairo"
+                        "Helsinki" = "Europe/Helsinki"
+                        "Kyiv" = "Europe/Kiev"
+                        "Riga" = "Europe/Riga"
+                        "Sofia" = "Europe/Sofia"
+                        "Tallinn" = "Europe/Tallinn"
+                        "Vilnius" = "Europe/Vilnius"
+                        "Athens" = "Europe/Athens"
+                        "Istanbul" = "Europe/Istanbul"
+                        "Minsk" = "Europe/Minsk"
+                        "Jerusalem" = "Asia/Jerusalem"
+                        "Harare" = "Africa/Harare"
+                        "Pretoria" = "Africa/Johannesburg"
+                        "Moscow" = "Europe/Moscow"
+                        "St. Petersburg" = "Europe/Moscow"
+                        "Volgograd" = "Europe/Moscow"
+                        "Kuwait" = "Asia/Kuwait"
+                        "Riyadh" = "Asia/Riyadh"
+                        "Nairobi" = "Africa/Nairobi"
+                        "Baghdad" = "Asia/Baghdad"
+                        "Tehran" = "Asia/Tehran"
+                        "Abu Dhabi" = "Asia/Muscat"
+                        "Muscat" = "Asia/Muscat"
+                        "Baku" = "Asia/Baku"
+                        "Tbilisi" = "Asia/Tbilisi"
+                        "Yerevan" = "Asia/Yerevan"
+                        "Kabul" = "Asia/Kabul"
+                        "Ekaterinburg" = "Asia/Yekaterinburg"
+                        "Islamabad" = "Asia/Karachi"
+                        "Karachi" = "Asia/Karachi"
+                        "Tashkent" = "Asia/Tashkent"
+                        "Chennai" = "Asia/Kolkata"
+                        "Kolkata" = "Asia/Kolkata"
+                        "Mumbai" = "Asia/Kolkata"
+                        "New Delhi" = "Asia/Kolkata"
+                        "Kathmandu" = "Asia/Kathmandu"
+                        "Astana" = "Asia/Dhaka"
+                        "Dhaka" = "Asia/Dhaka"
+                        "Sri Jayawardenepura" = "Asia/Colombo"
+                        "Almaty" = "Asia/Almaty"
+                        "Novosibirsk" = "Asia/Novosibirsk"
+                        "Rangoon" = "Asia/Rangoon"
+                        "Bangkok" = "Asia/Bangkok"
+                        "Hanoi" = "Asia/Bangkok"
+                        "Jakarta" = "Asia/Jakarta"
+                        "Krasnoyarsk" = "Asia/Krasnoyarsk"
+                        "Beijing" = "Asia/Shanghai"
+                        "Chongqing" = "Asia/Chongqing"
+                        "Hong Kong" = "Asia/Hong_Kong"
+                        "Urumqi" = "Asia/Urumqi"
+                        "Kuala Lumpur" = "Asia/Kuala_Lumpur"
+                        "Singapore" = "Asia/Singapore"
+                        "Taipei" = "Asia/Taipei"
+                        "Perth" = "Australia/Perth"
+                        "Irkutsk" = "Asia/Irkutsk"
+                        "Ulaan Bataar" = "Asia/Ulaanbaatar"
+                        "Seoul" = "Asia/Seoul"
+                        "Osaka" = "Asia/Tokyo"
+                        "Sapporo" = "Asia/Tokyo"
+                        "Tokyo" = "Asia/Tokyo"
+                        "Yakutsk" = "Asia/Yakutsk"
+                        "Darwin" = "Australia/Darwin"
+                        "Adelaide" = "Australia/Adelaide"
+                        "Canberra" = "Australia/Melbourne"
+                        "Melbourne" = "Australia/Melbourne"
+                        "Sydney" = "Australia/Sydney"
+                        "Brisbane" = "Australia/Brisbane"
+                        "Hobart" = "Australia/Hobart"
+                        "Vladivostok" = "Asia/Vladivostok"
+                        "Guam" = "Pacific/Guam"
+                        "Port Moresby" = "Pacific/Port_Moresby"
+                        "Magadan" = "Asia/Magadan"
+                        "Solomon Is." = "Asia/Magadan"
+                        "New Caledonia" = "Pacific/Noumea"
+                        "Fiji" = "Pacific/Fiji"
+                        "Kamchatka" = "Asia/Kamchatka"
+                        "Marshall Is." = "Pacific/Majuro"
+                        "Auckland" = "Pacific/Auckland"
+                        "Wellington" = "Pacific/Auckland"
+                        "Nuku'alofa" = "Pacific/Tongatapu"
+                        "Tokelau Is." = "Pacific/Fakaofo"
+                        "Samoa" = "Pacific/Apia"}
