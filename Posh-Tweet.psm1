@@ -41,7 +41,8 @@ function Set-TweetToken
         [Parameter(Mandatory=$true,
                    ValueFromPipelineByPropertyName=$true,
                    Position=4)]
-        [securestring]$MasterPassword
+        [securestring]
+        $MasterPassword
 
     )
 
