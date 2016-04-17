@@ -558,7 +558,7 @@ function Get-TweetTimeline
         [Parameter(Mandatory=$false,
                    ValueFromPipelineByPropertyName=$true)]
         [switch]
-        $ExclueReplies,
+        $ExcludeReplies,
 
         # Returns results with an ID greater than (that is, more recent than)
         # the specified ID. There are limits to the number of Tweets which can
@@ -590,7 +590,7 @@ function Get-TweetTimeline
 
         $TimelineParams.MaximumNumberOfTweetsToRetrieve = $Count
 
-        if ($ExclueReplies) { $TimelineParams.ExcludeReplies = $true }
+        if ($ExcludeReplies) { $TimelineParams.ExcludeReplies = $true }
 
         if ($MaxID) { $TimelineParams.MaxId = $MaxID }
 
@@ -665,7 +665,7 @@ function Get-TweetMentionTimeline
 
         $TimelineParams.MaximumNumberOfTweetsToRetrieve = $Count
 
-        if ($ExclueReplies) { $TimelineParams.ExcludeReplies = $true }
+        if ($ExcludeReplies) { $TimelineParams.ExcludeReplies = $true }
 
         if ($MaxID) { $TimelineParams.MaxId = $MaxID }
 
