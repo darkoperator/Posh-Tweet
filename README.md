@@ -7,7 +7,7 @@ PowerShell Module for interacting with Twitter
 Log on https://apps.twitter.com with your twitter account and register a new app.
 Retrieve your APIKey, APISecret and generate a set of access Token
 
-Think of a masterPassword to encrypt those information onto your disk, only the current windows user will have access to decrypt the configuration file on this machine.
+Think of a masterPassword to encrypt those information onto your disk.
 
 ```powershell
 $twitSet = @{
